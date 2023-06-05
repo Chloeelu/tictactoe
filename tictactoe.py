@@ -1,7 +1,11 @@
 import random
 
 class TicTacToe:
-    def __init__(self): # Use as is
+    PLAYER = 'X'
+    COMPUTER = 'O'
+    EMPTY = ' '
+
+    def __init__(self): 
         """ initializes data fields (board and played) 
             and prints the banner messages 
             and prints the initial board on the screen
@@ -24,75 +28,77 @@ class TicTacToe:
         print(self.board[6], "|", self.board[7],"|", self.board[8], "    6| 7 |8")
         print("--+---+--", "--+---+--", sep="    ")
 
+    
+
+    def isValidMove(self, number):
+        if not number.isdigit():
+            print("Must be an integer")
+            return False
+        number = int(number)
+        if number not in range(9):
+            print("Must enter a valid cell number")
+            return False
+        if number in self.played:
+            print("Must enter a valid cell number")
+            return False
+        return True
 
     def playerNextMove(self) -> None:
-        """ prompts the player for a valid cell number; 
-            error checks that the input is a valid cell number; 
-            and prints the info and the updated self.board;
-        """
-        number = input("Next move for X (State a vaild cell num):")
-
-        while True:
-            if number.isdigit():
-                number = int(number)
-                if number in range(0,9):
-                    print("You chose cell", number)
-                    if number in self.played:
-                        print("Must enter a vaild cell number")
-                        number = input()
-                    else:
-                        self.played.add(number) 
-                        self.board[number] = "X"
-                        self.printBoard()
-                        break     
-                else:
-                    print("Must enter a vaild cell number")
-                    number = input()
-            else: 
-                print("Must be an integer")
-                number = input()
-        
-
-        
+        number = input("Next move for X (State a valid cell num):")
+        while not self.isValidMove(number):
+            number = input()
+        self.played.add(int(number)) 
+        self.board[int(number)] = self.PLAYER
+        self.printBoard()
 
     def computerNextMove(self) -> None:
-        """ computer randomly chooses a valid cell, 
-            and prints the info and the updated self.board 
-        """
-        while True:
-            step = random.randrange(9)
-            if step in self.played:
-                step = random.randrange(9)  
-            else:
-                self.played.add(step) 
-                self.board[step] = "O"
-                self.printBoard()
-                break  
+        winning_positions = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6),
+                             (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6)]
+        for pos in winning_positions:
+            i, j, k = pos
+            # attempt to win
+            if self.board[i] == self.board[j] == self.COMPUTER and k not in self.played:
+                step = k
+                break
+            elif self.board[i] == self.board[k] == self.COMPUTER and j not in self.played:
+                step = j
+                break
+            elif self.board[j] == self.board[k] == self.COMPUTER and i not in self.played:
+                step = i
+                break
+            # Attempt to block player
+            elif self.board[i] == self.board[j] == self.PLAYER and k not in self.played:
+                step = k
+                break
+            elif self.board[i] == self.board[k] == self.PLAYER and j not in self.played:
+                step = j
+                break
+            elif self.board[j] == self.board[k] == self.PLAYER and i not in self.played:
+                step = i
+                break
+        else:
+            while True:
+                step = random.randrange(9)
+                if step not in self.played:
+                    break
+        self.played.add(step) 
+        self.board[step] = self.COMPUTER
+        self.printBoard()
+
+    def isWinningMove(self, i, j, k):
+        return self.board[i] == self.board[j] == self.board[k] != self.EMPTY
 
     def hasWon(self, who: str) -> bool:
-        """ returns True if who (being passed 'X' or 'O') has won, False otherwise """
-        winner = (self.board[0]==who and self.board[1]==who and self.board[2]==who) or\
-        (self.board[3]==who and self.board[4]==who and self.board[5]==who) or\
-        (self.board[6]==who and self.board[7]==who and self.board[8]==who) or\
-        (self.board[0]==who and self.board[3]==who and self.board[6]==who) or\
-        (self.board[1]==who and self.board[4]==who and self.board[7]==who) or\
-        (self.board[2]==who and self.board[5]==who and self.board[8]==who) or\
-        (self.board[0]==who and self.board[4]==who and self.board[8]==who) or\
-        (self.board[2]==who and self.board[4]==who and self.board[6]==who)
-        return winner                         
+        winning_positions = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6),
+                             (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6)]
+        return any(self.isWinningMove(*pos) for pos in winning_positions)
 
     def terminate(self, who: str) -> bool:
-        """ returns True if who (being passed 'X' or 'O') has won or if it's a draw, False otherwise;
-            it also prints the final messages:
-                 "You won! Thanks for playing." or 
-                 "You lost! Thanks for playing." or 
-                 "A draw! Thanks for playing."  
-        """
         winner = self.hasWon(who)
-        if winner and  who=='X':
+        if winner and who == self.PLAYER:
             print("You won! Thanks for playing.")
             return True
-        if winner and  who=='O':
+        if winner and who == self.COMPUTER:
             print("You lost! Thanks for playing.")
             return True
         if len(self.played) == 9:
@@ -100,10 +106,10 @@ class TicTacToe:
             return True 
         return False
 
-if __name__ == "__main__":  # Use as is
-    ttt = TicTacToe()  # initialize a game
+if __name__ == "__main__":
+    ttt = TicTacToe()
     while True:
-        ttt.playerNextMove()            # X starts first
-        if(ttt.terminate('X')): break   # if X won or a draw, print message and terminate
-        ttt.computerNextMove()          # computer plays O
-        if(ttt.terminate('O')): break   # if O won or a draw, print message and terminate
+        ttt.playerNextMove()
+        if(ttt.terminate(TicTacToe.PLAYER)): break
+        ttt.computerNextMove()
+        if(ttt.terminate(TicTacToe.COMPUTER)): break
